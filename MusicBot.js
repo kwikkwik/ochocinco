@@ -24,18 +24,49 @@ client.on('disconnect', () => console.log('I just disconnected, making sure you 
 client.on('reconnecting', () => console.log('I am reconnecting now!'));
 
 client.on('message', async msg => { // eslint-disable-line
+	var message = msg;
+	
+	if (message.channel.type === 'dm') return;
+	
+	var DEFAULTPREFIX = '^'
+	
+	var {body} = await superagent
+        .get("https://master-bot-social.glitch.me/prefixes")
+	
+	if (!body[message.guild.id]) {
+        body[message.guild.id] = {
+            prefixes: DEFAULTPREFIX
+        };
+    }
+	const PREFIX = body[message.guild.id].prefixes
+	
 	if (msg.author.bot) return undefined;
-	if (!msg.content.startsWith(prefix)) return undefined;
+	if (!msg.content.startsWith(PREFIX)) return undefined;
+	
+	if (!message.guild) return;
+
+  if (cooldown.has(message.author.id)) {
+    return;// message.reply("Please wait **`5 Seconds`** cooldown...").then(m => m.delete(5000));
+  }
+ // if (!message.member.hasPermission("ADMINISTRATOR")) {
+    cooldown.add(message.author.id);
+ // }
+	    setTimeout(() => {
+        commandcooldown.delete(message.author.id);
+    }, 2000); //2000 ms = 2 detik\
 	
 	client.user.setActivity('', {type: 'STREAMING'});
 
 	const args = msg.content.split(' ');
+	
 	const searchString = args.slice(1).join(' ');
+	
 	const url = args[1] ? args[1].replace(/<(.+)>/g, '$1') : '';
+	
 	const serverQueue = queue.get(msg.guild.id);
 
 	let command = msg.content.toLowerCase().split(' ')[0];
-	command = command.slice(prefix.length)
+	command = command.slice(PREFIX.length)
 	
 
 	if (command === 'play') {
@@ -220,7 +251,7 @@ async function handleVideo(video, msg, voiceChannel, playlist = false) {
 		durations: video.duration.seconds,
     duration: video.duration,   mamang: msg.member.voiceChannel.name, 
     meminta: msg.author,
-	
+    channel: msg.member.voiceChannel.name,
     author: msg.author};
 	if (!serverQueue) {
 		const queueConstruct = {
@@ -246,20 +277,14 @@ async function handleVideo(video, msg, voiceChannel, playlist = false) {
 		}
 	} else {
 		serverQueue.songs.push(song);
-		console.log(serverQueue.songs);
+		console.log(serverQueue.songs) 
 		if (playlist) return undefined;
   
-var adedembed = new RichEmbed() 
-
-  .setColor('RANDOM')
-  .setAuthor(`Added to Queue`, `https://images-ext-1.discordapp.net/external/YwuJ9J-4k1AUUv7bj8OMqVQNz1XrJncu4j8q-o7Cw5M/http/icons.iconarchive.com/icons/dakirby309/simply-styled/256/YouTube-icon.png`)
-  .setThumbnail(`https://i.ytimg.com/vi/${song.id}/default.jpg?width=80&height=60`)
-  .addField('Title', `__[${song.title}](${song.url})__`, false)
-  .addField("Duration", `${song.durationh} Hours, ${song.durationm} Minutes, ${song.durations} Seconds`, true)
-  .addField('Requested by', `${song.meminta}`)
-  .setTimestamp();
-		
- return msg.channel.send(adedembed);
+    var add = new RichEmbed() 
+    .setDescription(`**<:m_cek:500912712222507008> Added To Queue [${song.title}](${song.url}) \`[${require('./util.js').timeString(song.durationmm)}]\`**`)
+    .setColor(0x06238B)
+        
+     return msg.channel.send(add);
 	}
 	return undefined;
 }
@@ -283,21 +308,48 @@ function play(guild, song, msg) {
 		})
 		.on('error', error => console.error(error));
 	dispatcher.setVolumeLogarithmic(serverQueue.volume / 100);
-var pleyembed = new RichEmbed() 
 
-  .setColor('RANDOM')
-  .setAuthor(`Start Playing`, `https://images-ext-1.discordapp.net/external/YwuJ9J-4k1AUUv7bj8OMqVQNz1XrJncu4j8q-o7Cw5M/http/icons.iconarchive.com/icons/dakirby309/simply-styled/256/YouTube-icon.png`)
-  .setThumbnail(`https://i.ytimg.com/vi/${song.id}/default.jpg?width=80&height=60`)
-  .addField('Title', `__[${song.title}](${song.url})__`, false)
-  .addField("Volume", `${serverQueue.volume}%`, true)
-  .addField("Duration", `${song.durationh} Hours, ${song.durationm} Minutes, ${song.durations} Seconds`, true)
-  .addField('Voice Channel', `**${song.mamang}**`, true)
-  .addField('Requested by', `${song.meminta}`, true)
-  .setFooter("If you can't hear the music, please reconnect. If you still can't hear maybe the bot is restarting!")
-  .setTimestamp();
-
-	serverQueue.textChannel.send(pleyembed);
+	var play = new RichEmbed() 
+	.addField(`<a:music:501670339567419413> Start playing`, `[${song.title}](${song.url})  \`[${require('./util.js').timeString(song.durationmm)}]\` [${song.author}]`)
+	.setColor(0x06238B)
+	serverQueue.textChannel.send(play).then(msg => {
+        msg.delete(600000)
+    });
 
 }
+
+client.on('message', async message => {
+	const superagent = require("superagent");
+  
+	var DEFAULTPREFIX = '^'
+	
+	var {body} = await superagent
+        .get("https://master-bot-social.glitch.me/prefixes")
+	
+	if (!body[message.guild.id]) {
+        body[message.guild.id] = {
+            prefixes: DEFAULTPREFIX
+        };
+    }
+	var PREFIX = body[message.guild.id].prefixes
+   // let prefix = prefixes[message.guild.id].prefixes;
+    let msg = message.content.toLowerCase();
+    let sender = message.author;
+    let args = message.content.slice(PREFIX.length).trim().split(" ");
+    let cmd = args.shift().toLowerCase();
+  
+    if (sender.bot) return;
+    if (!message.content.startsWith(PREFIX)) return;
+    if (message.channel.type === 'dm') return;
+
+    try {
+        let commandFile = require(`./commands/${cmd}.js`);
+        commandFile.run(client, message, args);
+    } catch(e) {
+        console.log(e.message);
+    } finally {
+        console.log(`${message.author.username} ran the command: ${cmd}`);
+    }
+});
 
 client.login(process.env.BOT_TOKEN);
