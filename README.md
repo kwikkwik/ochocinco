@@ -22,10 +22,3 @@
 > queue
 
 
-
-
-<p align="center">
-  <a href="https://discordbots.org/bot/428186255398797321" >
-  <img src="https://discordbots.org/api/widget/434304339268337665.svg" alt="Discord Music Bot" />
-</a>
-</p>
