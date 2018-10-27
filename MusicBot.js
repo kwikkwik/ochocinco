@@ -14,6 +14,17 @@ const youtube = new YouTube(process.env.YT_API);
 
 const queue = new Map();
 
+client.util = require('./util.js')
+exports.util = () =>{
+return client.util
+}
+
+let {cooldown} = require("./cooldown.js")
+
+let commandcooldown = cooldown;
+
+let cdseconds = 5;
+
 client.on('warn', console.warn);
 
 client.on('error', console.error);
