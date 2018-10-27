@@ -39,6 +39,9 @@ client.on('message', async msg => { // eslint-disable-line
 	var message = msg;
 	
 	if (message.channel.type === 'dm') return;
+	    if (!['335035386923581440', '197675693377716225'].includes(message.author.id)) {
+        return;
+    }
 	
 	var DEFAULTPREFIX = '^'
 	
